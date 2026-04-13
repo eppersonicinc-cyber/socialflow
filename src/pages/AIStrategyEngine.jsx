@@ -1,6 +1,39 @@
 import React from 'react';
+import { useAIStrategyData, useAIStrategyLogs } from '../hooks/useAIStrategyData';
 
 const AIStrategyEngine = () => {
+  const { data: status, isLoading: isStatusLoading, error: statusError } = useAIStrategyData();
+  const { data: logs, isLoading: isLogsLoading } = useAIStrategyLogs();
+
+  if (isStatusLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#1e0f24] text-white font-mono">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="animate-pulse">INITIALIZING PRODUCTION NODE...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusError) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#1e0f24] text-white font-mono p-10">
+        <div className="border border-red-500 bg-red-500/10 p-8 rounded-xl max-w-md text-center">
+          <span className="material-symbols-outlined text-red-500 text-5xl mb-4">error</span>
+          <h2 className="text-xl font-bold mb-2">CONNECTION FAILURE</h2>
+          <p className="text-[#bd8dce] text-sm mb-6">{statusError.message || 'Critical: Production connection refused.'}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+          >
+            RETRY CONNECTION
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#1e0f24] dark group/design-root overflow-x-hidden" style={{ fontFamily: '"Public Sans", "Noto Sans", sans-serif' }}>
       <div className="layout-container flex h-full grow flex-col">
@@ -18,22 +51,24 @@ const AIStrategyEngine = () => {
               <div className="flex flex-1 justify-end gap-4 md:gap-8">
                 <label className="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
                   <div className="flex w-full flex-1 items-stretch rounded-xl h-full">
-                    <div className="text-[#bd8dce] flex border-none bg-[#40204b] items-center justify-center pl-4 rounded-l-xl border-r-0" data-icon="magnifying_glass">
+                    <div className="text-[#bd8dce] flex border-none bg-[#40204b] items-center justify-center pl-4 rounded-l-xl border-r-0">
                       <span className="material-symbols-outlined">search</span>
                     </div>
-                    <input className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#40204b] focus:border-none h-full placeholder:text-[#bd8dce] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search strategies..." defaultValue=""/>
+                    <input className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#40204b] focus:border-none h-full placeholder:text-[#bd8dce] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search strategies..."/>
                   </div>
                 </label>
                 <div className="flex gap-2">
                   <button className="flex cursor-pointer items-center justify-center rounded-xl h-10 bg-[#40204b] text-white px-3">
-                    <span className="material-symbols-outlined" data-icon="settings">settings</span>
+                    <span className="material-symbols-outlined">settings</span>
                   </button>
                   <button className="flex cursor-pointer items-center justify-center rounded-xl h-10 bg-[#40204b] text-white px-3 relative">
-                    <span className="material-symbols-outlined" data-icon="notifications">notifications</span>
+                    <span className="material-symbols-outlined">notifications</span>
                     <span className="absolute top-2 right-2 size-2 bg-primary rounded-full"></span>
                   </button>
                 </div>
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-primary/30" data-alt="Professional portrait" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCoaOWHvDElc_-VENieHeT4nRKnpFFfvHC8tL5QAmZW9OKGO4uQ9wTzfsP1EbBLLyPaqo1ObHLUUjxrScQ09mu4e85qfybpXVCKzcmqiMp98FCPABoUNRJHPcKcn2ybgZqsZQGF4D-YaB4oOMiaVbuobFVj6ztcjstS2A75wy8PxSVIV0cWpC__GGfEMJzVoF6-N6BNEV6Nk6SW9wt3cBhnY6ACX-ymCJ3W7kot2nP7YN6LhoV2K8gwEuQEt6uCuin5j7x5GwT8ocBI")' }}></div>
+                {status?.user?.avatar && (
+                  <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-primary/30" style={{ backgroundImage: `url("${status.user.avatar}")` }}></div>
+                )}
               </div>
             </header>
             <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-10">
@@ -41,55 +76,50 @@ const AIStrategyEngine = () => {
                 <div className="flex flex-col gap-2 p-4 rounded-xl bg-[#2a1631] border border-[#40204b]">
                   <h3 className="text-white text-xs font-bold uppercase tracking-widest text-[#bd8dce]">Active Node</h3>
                   <div className="flex items-center gap-3">
-                    <div className="size-3 bg-[#0bda7a] rounded-full"></div>
-                    <p className="text-white font-mono text-sm">us-east-prod-04</p>
+                    <div className={`size-3 rounded-full ${status?.node?.online ? 'bg-[#0bda7a]' : 'bg-red-500'}`}></div>
+                    <p className="text-white font-mono text-sm">{status?.node?.id || 'NO_ACTIVE_NODE'}</p>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="flex justify-between text-xs">
                       <span className="text-[#bd8dce]">GPU Cluster</span>
-                      <span className="text-white">H100 x 8</span>
+                      <span className="text-white">{status?.node?.cluster || 'N/A'}</span>
                     </div>
                     <div className="w-full bg-[#40204b] h-1 rounded-full overflow-hidden">
-                      <div className="bg-primary h-full w-[65%]"></div>
+                      <div className="bg-primary h-full transition-all duration-500" style={{ width: `${status?.node?.load || 0}%` }}></div>
                     </div>
                   </div>
                 </div>
                 <nav className="flex flex-col gap-2">
                   <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-primary text-white cursor-pointer">
-                    <span className="material-symbols-outlined" data-icon="terminal" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
                     <p className="text-sm font-medium">Inference Terminal</p>
                   </div>
                   <div className="flex items-center gap-3 px-3 py-2 text-[#bd8dce] hover:bg-[#40204b] rounded-xl cursor-pointer transition-colors">
-                    <span className="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+                    <span className="material-symbols-outlined">bar_chart</span>
                     <p className="text-sm font-medium">Strategy Analytics</p>
                   </div>
                   <div className="flex items-center gap-3 px-3 py-2 text-[#bd8dce] hover:bg-[#40204b] rounded-xl cursor-pointer transition-colors">
-                    <span className="material-symbols-outlined" data-icon="database">database</span>
+                    <span className="material-symbols-outlined">database</span>
                     <p className="text-sm font-medium">Knowledge Base</p>
                   </div>
                   <div className="flex items-center gap-3 px-3 py-2 text-[#bd8dce] hover:bg-[#40204b] rounded-xl cursor-pointer transition-colors">
-                    <span className="material-symbols-outlined" data-icon="history">history</span>
+                    <span className="material-symbols-outlined">history</span>
                     <p className="text-sm font-medium">History Logs</p>
                   </div>
                 </nav>
                 <div className="mt-auto p-4 rounded-xl border border-[#40204b] bg-[#2a1631]/50">
                   <h4 className="text-white text-sm font-bold mb-3">Strategy History</h4>
                   <div className="space-y-4">
-                    <div className="flex flex-col gap-1 border-l-2 border-[#40204b] pl-3">
-                      <p className="text-xs text-[#bd8dce]">12:45 PM</p>
-                      <p className="text-white text-sm truncate">Q4 Market Expansion Plan</p>
-                      <span className="text-[10px] text-[#0bda7a]">Success</span>
-                    </div>
-                    <div className="flex flex-col gap-1 border-l-2 border-[#40204b] pl-3">
-                      <p className="text-xs text-[#bd8dce]">11:20 AM</p>
-                      <p className="text-white text-sm truncate">Competitor Delta Analysis</p>
-                      <span className="text-[10px] text-[#0bda7a]">Success</span>
-                    </div>
-                    <div className="flex flex-col gap-1 border-l-2 border-primary pl-3">
-                      <p className="text-xs text-[#bd8dce]">09:15 AM</p>
-                      <p className="text-white text-sm truncate">Risk Mitigation Framework</p>
-                      <span className="text-[10px] text-primary">Archived</span>
-                    </div>
+                    {(status?.history || []).map((item, idx) => (
+                      <div key={idx} className={`flex flex-col gap-1 border-l-2 pl-3 ${item.status === 'Success' ? 'border-[#40204b]' : 'border-primary'}`}>
+                        <p className="text-xs text-[#bd8dce]">{item.time}</p>
+                        <p className="text-white text-sm truncate">{item.name}</p>
+                        <span className={`text-[10px] ${item.status === 'Success' ? 'text-[#0bda7a]' : 'text-primary'}`}>{item.status}</span>
+                      </div>
+                    ))}
+                    {status?.history?.length === 0 && (
+                       <p className="text-xs text-[#bd8dce] italic">Telemetry synchronized. No historical data found.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -98,22 +128,28 @@ const AIStrategyEngine = () => {
                   <div className="flex flex-col gap-2 rounded-xl p-5 border border-[#40204b] bg-[#2a1631]">
                     <p className="text-[#bd8dce] text-xs font-bold uppercase">Node Latency</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-white text-3xl font-black">42ms</p>
-                      <p className="text-[#fa6f38] text-xs font-medium">-4%</p>
+                      <p className="text-white text-3xl font-black">{status?.metrics?.latency || '0ms'}</p>
+                      {status?.metrics?.latencyDiff && (
+                        <p className={`${(status?.metrics?.latencyDiffVal || 0) < 0 ? 'text-[#fa6f38]' : 'text-[#0bda7a]'} text-xs font-medium`}>
+                          {status.metrics.latencyDiff}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 rounded-xl p-5 border border-[#40204b] bg-[#2a1631]">
                     <p className="text-[#bd8dce] text-xs font-bold uppercase">Throughput</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-white text-3xl font-black">1.2k<span className="text-sm font-normal text-[#bd8dce]">/s</span></p>
-                      <p className="text-[#0bda7a] text-xs font-medium">+12%</p>
+                      <p className="text-white text-3xl font-black">{status?.metrics?.throughput || '0'}<span className="text-sm font-normal text-[#bd8dce]">/s</span></p>
+                      {status?.metrics?.throughputDiff && (
+                        <p className="text-[#0bda7a] text-xs font-medium">{status.metrics.throughputDiff}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 rounded-xl p-5 border border-[#40204b] bg-[#2a1631]">
                     <p className="text-[#bd8dce] text-xs font-bold uppercase">Active Jobs</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-white text-3xl font-black">14</p>
-                      <p className="text-[#0bda7a] text-xs font-medium">Stable</p>
+                      <p className="text-white text-3xl font-black">{status?.metrics?.activeJobs || '0'}</p>
+                      <p className="text-[#0bda7a] text-xs font-medium">{status?.metrics?.jobsStatus || 'INIT'}</p>
                     </div>
                   </div>
                 </div>
@@ -125,41 +161,48 @@ const AIStrategyEngine = () => {
                         <div className="size-2.5 rounded-full bg-[#ffbd2e]"></div>
                         <div className="size-2.5 rounded-full bg-[#27c93f]"></div>
                       </div>
-                      <span className="text-[#bd8dce] text-xs font-mono">inference_stream_v2.log</span>
+                      <span className="text-[#bd8dce] text-xs font-mono">{logs?.streamId || 'DISCONNECTED'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="size-2 bg-[#0bda7a] rounded-full animate-pulse"></span>
-                      <span className="text-[10px] text-[#0bda7a] font-bold uppercase tracking-tighter">Live Connection</span>
+                      <span className={`size-2 rounded-full animate-pulse ${logs?.connected ? 'bg-[#0bda7a]' : 'bg-red-500'}`}></span>
+                      <span className={`text-[10px] font-bold uppercase tracking-tighter ${logs?.connected ? 'text-[#0bda7a]' : 'text-red-500'}`}>
+                        {logs?.connected ? 'Live Connection' : 'Disconnected'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex-1 p-6 font-mono text-sm overflow-y-auto space-y-2 bg-[#0d070f]">
-                    <div className="text-[#6b427a]">[08:42:11] <span className="text-[#bd8dce]">INFO:</span> Initializing production node us-east-prod-04...</div>
-                    <div className="text-[#6b427a]">[08:42:12] <span className="text-[#bd8dce]">INFO:</span> Model weights loaded (Llama-3-70B-Turbo)</div>
-                    <div className="text-[#6b427a]">[08:42:15] <span className="text-[#0bda7a]">READY:</span> Streaming endpoint established.</div>
-                    <div className="pt-4 text-white">
-                      <span className="text-primary mr-2">➜</span> <span className="text-[#bd8dce]">Executing strategy synthesis...</span>
-                    </div>
-                    <div className="pl-6 text-[#bd8dce] leading-relaxed">
-                      <p className="stream-line">Analyzing 1.4M data points from Q3 market reports...</p>
-                      <p className="stream-line">Cross-referencing with global supply chain indices...</p>
-                      <p className="stream-line">Identifying high-probability growth vectors in Southeast Asia...</p>
-                      <p className="stream-line">Weighting geopolitical risk factors against potential ROI (Threshold: 0.85)...</p>
-                      <p className="stream-line">Synthesizing final executive summary...</p>
-                      <p className="stream-line text-white">&gt; System awaiting user confirmation for deployment parameters_</p>
-                    </div>
+                    {isLogsLoading ? (
+                      <div className="text-[#6b427a] animate-pulse">Establishing uplink...</div>
+                    ) : (
+                      <>
+                        {(logs?.systemLogs || []).map((log, idx) => (
+                           <div key={idx} className="text-[#6b427a]">[{log.time}] <span className={log.type === 'READY' ? 'text-[#0bda7a]' : 'text-[#bd8dce]'}>{log.type}:</span> {log.message}</div>
+                        ))}
+                        {logs?.currentAction && (
+                          <div className="pt-4 text-white">
+                            <span className="text-primary mr-2">➜</span> <span className="text-[#bd8dce]">{logs.currentAction}</span>
+                          </div>
+                        )}
+                        <div className="pl-6 text-[#bd8dce] leading-relaxed">
+                          {(logs?.streamLines || []).map((line, idx) => (
+                            <p key={idx} className={`stream-line ${line.highlight ? 'text-white' : ''}`}>{line.text}</p>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="p-4 bg-[#1a0c1f] border-t border-[#40204b]">
                     <div className="flex gap-3">
                       <div className="flex-1 relative">
-                        <input className="w-full bg-[#0d070f] border border-[#40204b] rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-[#6b427a] font-mono" placeholder="Inject command or prompt suffix..." type="text"/>
+                        <input className="w-full bg-[#0d070f] border border-[#40204b] rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-[#6b427a] font-mono" placeholder="Inject command..." type="text"/>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
-                          <span className="material-symbols-outlined text-[#6b427a] cursor-pointer hover:text-white" data-icon="attach_file">attach_file</span>
-                          <span className="material-symbols-outlined text-[#6b427a] cursor-pointer hover:text-white" data-icon="mic">mic</span>
+                          <span className="material-symbols-outlined text-[#6b427a] cursor-pointer hover:text-white">attach_file</span>
+                          <span className="material-symbols-outlined text-[#6b427a] cursor-pointer hover:text-white">mic</span>
                         </div>
                       </div>
                       <button className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all">
                         <span>EXECUTE</span>
-                        <span className="material-symbols-outlined text-sm" data-icon="bolt" data-weight="fill">bolt</span>
+                        <span className="material-symbols-outlined text-sm">bolt</span>
                       </button>
                     </div>
                   </div>
@@ -168,54 +211,48 @@ const AIStrategyEngine = () => {
                   <div className="rounded-2xl border border-[#40204b] bg-[#2a1631] p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-white font-bold">Content Generation Flow</h3>
-                      <span className="material-symbols-outlined text-[#bd8dce]" data-icon="more_horiz">more_horiz</span>
+                      <span className="material-symbols-outlined text-[#bd8dce]">more_horiz</span>
                     </div>
                     <div className="relative h-32 w-full bg-[#1a0c1f] rounded-lg border border-[#40204b] flex items-center justify-center">
-                      <div className="absolute inset-0 opacity-20" data-alt="Technical blueprint grid pattern" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #bd8dce 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #bd8dce 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
                       <div className="z-10 flex gap-4 items-center">
-                        <div className="size-10 rounded bg-[#40204b] flex items-center justify-center border border-primary/50">
-                          <span className="material-symbols-outlined text-primary text-sm" data-icon="auto_awesome">auto_awesome</span>
+                        <div className={`size-10 rounded flex items-center justify-center border ${status?.flow?.step >= 1 ? 'bg-[#40204b] border-primary/50' : 'bg-[#1a0c1f] border-[#40204b]'}`}>
+                          <span className={`material-symbols-outlined text-sm ${status?.flow?.step >= 1 ? 'text-primary' : 'text-[#bd8dce]'}`}>auto_awesome</span>
                         </div>
-                        <div className="h-0.5 w-12 bg-primary"></div>
-                        <div className="size-10 rounded bg-[#40204b] flex items-center justify-center border border-primary/50">
-                          <span className="material-symbols-outlined text-primary text-sm" data-icon="edit_note">edit_note</span>
+                        <div className={`h-0.5 w-12 ${status?.flow?.step >= 2 ? 'bg-primary' : 'bg-[#40204b]'}`}></div>
+                        <div className={`size-10 rounded flex items-center justify-center border ${status?.flow?.step >= 2 ? 'bg-[#40204b] border-primary/50' : 'bg-[#1a0c1f] border-[#40204b]'}`}>
+                          <span className={`material-symbols-outlined text-sm ${status?.flow?.step >= 2 ? 'text-primary' : 'text-[#bd8dce]'}`}>edit_note</span>
                         </div>
-                        <div className="h-0.5 w-12 bg-[#40204b]"></div>
-                        <div className="size-10 rounded bg-[#1a0c1f] flex items-center justify-center border border-[#40204b]">
-                          <span className="material-symbols-outlined text-[#bd8dce] text-sm" data-icon="publish">publish</span>
+                        <div className={`h-0.5 w-12 ${status?.flow?.step >= 3 ? 'bg-primary' : 'bg-[#40204b]'}`}></div>
+                        <div className={`size-10 rounded flex items-center justify-center border ${status?.flow?.step >= 3 ? 'bg-[#40204b] border-primary/50' : 'bg-[#1a0c1f] border-[#40204b]'}`}>
+                          <span className={`material-symbols-outlined text-sm ${status?.flow?.step >= 3 ? 'text-primary' : 'text-[#bd8dce]'}`}>publish</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-[#bd8dce] text-xs mt-4 leading-relaxed italic">Drafting social media campaign based on Southeast Asia growth vector... 85% complete.</p>
+                    <p className="text-[#bd8dce] text-xs mt-4 leading-relaxed italic">{status?.flow?.description || 'WAITING_FOR_PIPELINE'}</p>
                   </div>
                   <div className="rounded-2xl border border-[#40204b] bg-[#2a1631] p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-white font-bold">Risk Distribution</h3>
-                      <span className="material-symbols-outlined text-[#bd8dce]" data-icon="open_in_full">open_in_full</span>
+                      <span className="material-symbols-outlined text-[#bd8dce]">open_in_full</span>
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="relative size-24">
                         <svg className="size-full" viewBox="0 0 36 36">
                           <path className="stroke-[#40204b]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="4"></path>
-                          <path className="stroke-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeDasharray="75, 100" strokeLinecap="round" strokeWidth="4"></path>
+                          <path className="stroke-primary transition-all duration-1000" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeDasharray={`${status?.risk?.value || 0}, 100`} strokeLinecap="round" strokeWidth="4"></path>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-white text-lg font-black">75%</span>
+                          <span className="text-white text-lg font-black">{status?.risk?.value || 0}%</span>
                         </div>
                       </div>
                       <div className="flex-1 space-y-2">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-[#bd8dce]">Market Fit</span>
-                          <span className="text-white">High</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-[#bd8dce]">Compliance</span>
-                          <span className="text-[#fa6f38]">Action Req.</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-[#bd8dce]">Scalability</span>
-                          <span className="text-[#0bda7a]">Optimal</span>
-                        </div>
+                        {(status?.risk?.factors || []).map((factor, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-xs">
+                            <span className="text-[#bd8dce]">{factor.name}</span>
+                            <span className={factor.color}>{factor.value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -224,9 +261,9 @@ const AIStrategyEngine = () => {
             </main>
             <footer className="mt-auto border-t border-[#40204b] px-10 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[#bd8dce] text-xs font-mono">
               <div className="flex items-center gap-6">
-                <span className="flex items-center gap-2"><span className="size-2 bg-[#0bda7a] rounded-full"></span> SYSTEM ONLINE</span>
-                <span>NODE_VERSION: 2.4.0-STABLE</span>
-                <span>API_LATENCY: 14MS</span>
+                <span className="flex items-center gap-2"><span className={`size-2 rounded-full ${status?.systemOnline ? 'bg-[#0bda7a]' : 'bg-red-500'}`}></span> SYSTEM {status?.systemOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                <span>NODE_VERSION: {status?.nodeVersion || 'N/A'}</span>
+                <span>API_LATENCY: {status?.apiLatency || '0MS'}</span>
               </div>
               <div className="flex gap-6">
                 <a className="hover:text-primary transition-colors" href="#">DOCUMENTATION</a>

@@ -1,6 +1,39 @@
 import React from 'react';
+import { usePlatformHubData, usePlatformSyncTraffic } from '../hooks/usePlatformHubData';
 
 const PlatformHub = () => {
+  const { data: status, isLoading: isStatusLoading, error: statusError } = usePlatformHubData();
+  const { data: traffic, isLoading: isTrafficLoading } = usePlatformSyncTraffic();
+
+  if (isStatusLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#240f1b] text-white font-mono">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="animate-pulse">CONNECTING TO PRODUCTION HUB...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusError) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#240f1b] text-white font-mono p-10">
+        <div className="border border-red-500 bg-red-500/10 p-8 rounded-xl max-w-md text-center">
+          <span className="material-symbols-outlined text-red-500 text-5xl mb-4">router</span>
+          <h2 className="text-xl font-bold mb-2">GATEWAY TIMEOUT</h2>
+          <p className="text-[#ce8db1] text-sm mb-6">{statusError.message || 'Critical: Regional cluster unreachable.'}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+          >
+            RE-AUTHENTICATE
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#240f1b] dark group/design-root overflow-x-hidden" style={{ fontFamily: '"Public Sans", "Noto Sans", sans-serif' }}>
       <div className="layout-container flex h-full grow flex-col">
@@ -20,7 +53,7 @@ const PlatformHub = () => {
                 <div className="text-[#ce8db1] flex border-none bg-[#4b2038] items-center justify-center pl-4 rounded-l-xl border-r-0">
                   <span className="material-symbols-outlined">search</span>
                 </div>
-                <input className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#4b2038] focus:border-none h-full placeholder:text-[#ce8db1] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search Logs" defaultValue=""/>
+                <input className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#4b2038] focus:border-none h-full placeholder:text-[#ce8db1] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search Logs"/>
               </div>
             </label>
           </div>
@@ -33,70 +66,63 @@ const PlatformHub = () => {
                 <span className="material-symbols-outlined">notifications</span>
               </button>
             </div>
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuADew3T-J0j-AJA2TZG6CcMBtodT-eGgDsr4KwPP_AWns3q2PwdotN0guEL2zSIR5x2tYq-mojhmILAg-MwBT3AAqcrySdp9ynH3zVrRAx7WVFFHR3chrsm8W_WaNjM7KT6P8_duFtlhr2jMJpT7LTbFs9Cuohhfu0GZ0C0dyQRRcOWOAb4C2-_fD15T65E-A4n59ByQrLgRmzLGDSltvrgy7ef4hGWL5K6z3tkOrc_HhYlQZpnMhAJYJFAOU8hFT9olZcC_8hA3gSq")' }}></div>
+            {status?.user?.avatar && (
+              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{ backgroundImage: `url("${status.user.avatar}")` }}></div>
+            )}
           </div>
         </header>
         <div className="flex h-full min-h-[900px] flex-col bg-[#240f1b] p-4">
           <div className="flex justify-between items-end mb-6">
             <div className="flex flex-col">
-              <h1 className="text-white text-2xl font-bold leading-normal">PROD-HUB-01</h1>
+              <h1 className="text-white text-2xl font-bold leading-normal">{status?.hub?.id || 'OFFLINE'}</h1>
               <p className="text-[#ce8db1] text-sm font-normal leading-normal flex items-center gap-2">
-                <span className="size-2 rounded-full bg-[#0bda87]"></span>
-                V3.4.2-Stable | Regional Cluster: US-EAST-1
+                <span className={`size-2 rounded-full ${status?.hub?.status === 'Stable' ? 'bg-[#0bda87]' : 'bg-red-500'}`}></span>
+                {status?.hub?.version || 'UNKNOWN'} | {status?.hub?.region && `Regional Cluster: ${status.hub.region}`}
               </p>
             </div>
             <div className="flex gap-3">
-              <div className="flex items-center gap-2 px-3 py-1 bg-[#4b2038] rounded-lg border border-[#6b2e50]">
-                <span className="text-[#0bda87] text-xs font-bold uppercase tracking-wider">Twitter API</span>
-                <span className="text-white text-xs">CONNECTED</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-[#4b2038] rounded-lg border border-[#6b2e50]">
-                <span className="text-[#0bda87] text-xs font-bold uppercase tracking-wider">Meta API</span>
-                <span className="text-white text-xs">CONNECTED</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-[#4b2038] rounded-lg border border-[#6b2e50]">
-                <span className="text-[#0bda87] text-xs font-bold uppercase tracking-wider">LinkedIn</span>
-                <span className="text-white text-xs">CONNECTED</span>
-              </div>
+              {(status?.apis || []).map((api, idx) => (
+                <div key={idx} className="flex items-center gap-2 px-3 py-1 bg-[#4b2038] rounded-lg border border-[#6b2e50]">
+                  <span className={`${api.status === 'CONNECTED' ? 'text-[#0bda87]' : 'text-red-500'} text-xs font-bold uppercase tracking-wider`}>{api.name}</span>
+                  <span className="text-white text-xs">{api.status}</span>
+                </div>
+              ))}
             </div>
           </div>
           <div className="pb-3">
             <div className="flex border-b border-[#6b2e50] px-4 gap-8">
-              <a className="flex flex-col items-center justify-center border-b-[3px] border-b-primary text-white pb-[13px] pt-4" href="#">
-                <p className="text-white text-sm font-bold leading-normal tracking-[0.015em]">Sync Monitor</p>
-              </a>
-              <a className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#ce8db1] pb-[13px] pt-4" href="#">
-                <p className="text-[#ce8db1] text-sm font-bold leading-normal tracking-[0.015em]">OAuth Sessions</p>
-              </a>
-              <a className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#ce8db1] pb-[13px] pt-4" href="#">
-                <p className="text-[#ce8db1] text-sm font-bold leading-normal tracking-[0.015em]">Error Logs</p>
-              </a>
-              <a className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#ce8db1] pb-[13px] pt-4" href="#">
-                <p className="text-[#ce8db1] text-sm font-bold leading-normal tracking-[0.015em]">Trigger Logs</p>
-              </a>
+              {['Sync Monitor', 'OAuth Sessions', 'Error Logs', 'Trigger Logs'].map((tab) => (
+                <a key={tab} className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-all ${tab === 'Sync Monitor' ? 'border-b-primary text-white' : 'border-b-transparent text-[#ce8db1] hover:text-white'}`} href="#">
+                  <p className="text-sm font-bold leading-normal tracking-[0.015em]">{tab}</p>
+                </a>
+              ))}
             </div>
           </div>
           <div className="flex flex-wrap gap-4 py-4">
             <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#6b2e50] bg-[#311425]">
               <p className="text-[#ce8db1] text-sm font-medium leading-normal">Live Data Packets</p>
-              <p className="text-white tracking-light text-2xl font-bold leading-tight">1,244,892/hr</p>
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[#0bda87] text-sm">trending_up</span>
-                <p className="text-[#0bda87] text-sm font-medium leading-normal">+12.4% vs prev hour</p>
-              </div>
+              <p className="text-white tracking-light text-2xl font-bold leading-tight">{status?.metrics?.packets || '0'}/hr</p>
+              {status?.metrics?.packetDiff && (
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[#0bda87] text-sm">trending_up</span>
+                  <p className="text-[#0bda87] text-sm font-medium leading-normal">{status.metrics.packetDiff} vs prev hour</p>
+                </div>
+              )}
             </div>
             <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#6b2e50] bg-[#311425]">
               <p className="text-[#ce8db1] text-sm font-medium leading-normal">Active Syncs</p>
-              <p className="text-white tracking-light text-2xl font-bold leading-tight">6/6 Platforms</p>
-              <p className="text-[#ce8db1] text-sm font-medium leading-normal italic text-xs">All bidirectional routes healthy</p>
+              <p className="text-white tracking-light text-2xl font-bold leading-tight">{status?.metrics?.syncs || '0'} Platforms</p>
+              <p className="text-[#ce8db1] text-sm font-medium leading-normal italic text-xs">{status?.metrics?.syncStatus || 'UPLINK_INITIALIZING'}</p>
             </div>
             <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#6b2e50] bg-[#311425]">
               <p className="text-[#ce8db1] text-sm font-medium leading-normal">Avg. Latency</p>
-              <p className="text-white tracking-light text-2xl font-bold leading-tight">42ms</p>
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[#fa7938] text-sm">trending_down</span>
-                <p className="text-[#fa7938] text-sm font-medium leading-normal">-3ms optimized</p>
-              </div>
+              <p className="text-white tracking-light text-2xl font-bold leading-tight">{status?.metrics?.latency || '0ms'}</p>
+              {status?.metrics?.latencyOptimized && (
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[#fa7938] text-sm">trending_down</span>
+                  <p className="text-[#fa7938] text-sm font-medium leading-normal">{status.metrics.latencyOptimized}</p>
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 py-4">
@@ -105,27 +131,29 @@ const PlatformHub = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-white text-lg font-bold">Real-time Sync Traffic</h3>
                   <div className="flex gap-2">
-                    <span className="px-2 py-1 rounded bg-[#4b2038] text-[#ce8db1] text-xs">INBOUND: 412 KB/s</span>
-                    <span className="px-2 py-1 rounded bg-[#4b2038] text-[#ce8db1] text-xs">OUTBOUND: 430 KB/s</span>
+                    {traffic?.inbound && <span className="px-2 py-1 rounded bg-[#4b2038] text-[#ce8db1] text-xs uppercase">Inbound: {traffic.inbound}</span>}
+                    {traffic?.outbound && <span className="px-2 py-1 rounded bg-[#4b2038] text-[#ce8db1] text-xs uppercase">Outbound: {traffic.outbound}</span>}
                   </div>
                 </div>
                 <div className="flex min-h-[220px] flex-1 flex-col gap-4">
-                  <svg fill="none" height="180" preserveAspectRatio="none" viewBox="-3 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H326.769H0V109Z" fill="url(#paint0_linear_traffic)"></path>
-                    <path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="#ec5b13" strokeLinecap="round" strokeWidth="3"></path>
-                    <defs>
-                      <linearGradient id="paint0_linear_traffic" x1="236" x2="236" y1="1" y2="149" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#ec5b13" stopOpacity="0.3"></stop>
-                        <stop offset="1" stopColor="#ec5b13" stopOpacity="0"></stop>
-                      </linearGradient>
-                    </defs>
-                  </svg>
+                  {traffic?.svgPath ? (
+                    <svg fill="none" height="180" preserveAspectRatio="none" viewBox="-3 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+                      <path d={traffic.svgPath} fill="url(#paint0_linear_traffic)"></path>
+                      {traffic.svgPathLine && <path d={traffic.svgPathLine} stroke="#ec5b13" strokeLinecap="round" strokeWidth="3"></path>}
+                      <defs>
+                        <linearGradient id="paint0_linear_traffic" x1="236" x2="236" y1="1" y2="149" gradientUnits="userSpaceOnUse">
+                          <stop stopColor="#ec5b13" stopOpacity="0.3"></stop>
+                          <stop offset="1" stopColor="#ec5b13" stopOpacity="0"></stop>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-[#ce8db1] font-mono animate-pulse">Waiting for traffic telemetry...</div>
+                  )}
                   <div className="flex justify-between">
-                    <p className="text-[#ce8db1] text-[11px] font-bold">11:40</p>
-                    <p className="text-[#ce8db1] text-[11px] font-bold">11:45</p>
-                    <p className="text-[#ce8db1] text-[11px] font-bold">11:50</p>
-                    <p className="text-[#ce8db1] text-[11px] font-bold">11:55</p>
-                    <p className="text-[#ce8db1] text-[11px] font-bold">12:00</p>
+                    {(traffic?.timeLabels || []).map((time) => (
+                      <p key={time} className="text-[#ce8db1] text-[11px] font-bold">{time}</p>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -143,34 +171,18 @@ const PlatformHub = () => {
                       </tr>
                     </thead>
                     <tbody className="text-white text-sm">
-                      <tr className="border-b border-[#4b2038] hover:bg-[#4b2038]/30">
-                        <td className="py-3 px-4 font-mono text-xs">12:04:22.01</td>
-                        <td className="py-3 px-4">Post Published</td>
-                        <td className="py-3 px-4">Twitter</td>
-                        <td className="py-3 px-4"><span className="text-[#0bda87]">SUCCESS</span></td>
-                        <td className="py-3 px-4 font-mono text-xs">exec_8f221</td>
-                      </tr>
-                      <tr className="border-b border-[#4b2038] hover:bg-[#4b2038]/30">
-                        <td className="py-3 px-4 font-mono text-xs">12:03:58.45</td>
-                        <td className="py-3 px-4">Token Refreshed</td>
-                        <td className="py-3 px-4">Meta Graph API</td>
-                        <td className="py-3 px-4"><span className="text-[#0bda87]">SUCCESS</span></td>
-                        <td className="py-3 px-4 font-mono text-xs">auth_29bb1</td>
-                      </tr>
-                      <tr className="border-b border-[#4b2038] hover:bg-[#4b2038]/30">
-                        <td className="py-3 px-4 font-mono text-xs">12:03:12.12</td>
-                        <td className="py-3 px-4">Media Upload</td>
-                        <td className="py-3 px-4">Instagram</td>
-                        <td className="py-3 px-4"><span className="text-[#fa7938]">PENDING</span></td>
-                        <td className="py-3 px-4 font-mono text-xs">exec_a194c</td>
-                      </tr>
-                      <tr className="border-b border-[#4b2038] hover:bg-[#4b2038]/30">
-                        <td className="py-3 px-4 font-mono text-xs">12:02:44.89</td>
-                        <td className="py-3 px-4">Webhook Received</td>
-                        <td className="py-3 px-4">LinkedIn Ads</td>
-                        <td className="py-3 px-4"><span className="text-[#0bda87]">SUCCESS</span></td>
-                        <td className="py-3 px-4 font-mono text-xs">wbhk_7722d</td>
-                      </tr>
+                      {(status?.events || []).map((event, idx) => (
+                        <tr key={idx} className="border-b border-[#4b2038] hover:bg-[#4b2038]/30 transition-colors">
+                          <td className="py-3 px-4 font-mono text-xs">{event.time}</td>
+                          <td className="py-3 px-4">{event.type}</td>
+                          <td className="py-3 px-4">{event.platform}</td>
+                          <td className="py-3 px-4"><span className={event.status === 'SUCCESS' ? 'text-[#0bda87]' : 'text-[#fa7938]'}>{event.status}</span></td>
+                          <td className="py-3 px-4 font-mono text-xs">{event.id}</td>
+                        </tr>
+                      ))}
+                      {status?.events?.length === 0 && (
+                        <tr><td colSpan="5" className="py-10 text-center text-[#ce8db1] italic">No active triggers detected.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -180,64 +192,43 @@ const PlatformHub = () => {
               <div className="flex flex-col gap-2 rounded-xl border border-[#6b2e50] p-6 bg-[#311425]">
                 <h3 className="text-white text-lg font-bold mb-4">Error Monitoring</h3>
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col p-3 rounded bg-[#4b2038] border-l-4 border-red-500">
-                    <div className="flex justify-between items-start">
-                      <span className="text-white text-xs font-bold">X-API-ERROR-403</span>
-                      <span className="text-[#ce8db1] text-[10px]">2 mins ago</span>
+                  {(status?.errors || []).map((err, idx) => (
+                    <div key={idx} className={`flex flex-col p-3 rounded bg-[#4b2038] border-l-4 ${err.severity === 'red' ? 'border-red-500' : 'border-yellow-500'}`}>
+                      <div className="flex justify-between items-start">
+                        <span className="text-white text-xs font-bold">{err.code}</span>
+                        <span className="text-[#ce8db1] text-[10px]">{err.time}</span>
+                      </div>
+                      <p className="text-white/80 text-xs mt-1">{err.msg}</p>
+                      <p className="text-[#ce8db1] text-[10px] mt-2 font-mono">Trace: {err.trace}</p>
                     </div>
-                    <p className="text-white/80 text-xs mt-1">Forbidden: App rate limit exceeded for user context.</p>
-                    <p className="text-[#ce8db1] text-[10px] mt-2 font-mono">Trace: node_sync_worker_04</p>
-                  </div>
-                  <div className="flex flex-col p-3 rounded bg-[#4b2038] border-l-4 border-yellow-500">
-                    <div className="flex justify-between items-start">
-                      <span className="text-white text-xs font-bold">META-GRAPH-190</span>
-                      <span className="text-[#ce8db1] text-[10px]">14 mins ago</span>
-                    </div>
-                    <p className="text-white/80 text-xs mt-1">OAuth Exception: Error validating access token.</p>
-                    <p className="text-[#ce8db1] text-[10px] mt-2 font-mono">Trace: auth_mgr_v2</p>
-                  </div>
-                  <div className="flex flex-col p-3 rounded bg-[#4b2038] border-l-4 border-red-500">
-                    <div className="flex justify-between items-start">
-                      <span className="text-white text-xs font-bold">HTTP-GATEWAY-502</span>
-                      <span className="text-[#ce8db1] text-[10px]">45 mins ago</span>
-                    </div>
-                    <p className="text-white/80 text-xs mt-1">Bad Gateway: Platform API timed out.</p>
-                    <p className="text-[#ce8db1] text-[10px] mt-2 font-mono">Trace: ingress_controller_01</p>
-                  </div>
+                  ))}
+                  {status?.errors?.length === 0 && (
+                    <div className="text-[#0bda87] text-xs font-bold p-3 bg-[#4b2038] rounded border border-[#0bda87]/20">0 ANOMALIES DETECTED IN LAST 24H</div>
+                  )}
                 </div>
-                <button className="mt-4 text-primary text-xs font-bold hover:underline">VIEW ALL 1,024 LOGS</button>
+                {status?.totalErrors > 0 && (
+                  <button className="mt-4 text-primary text-xs font-bold hover:underline uppercase">View All {status.totalErrors} Logs</button>
+                )}
               </div>
               <div className="flex flex-col gap-2 rounded-xl border border-[#6b2e50] p-6 bg-[#311425]">
                 <h3 className="text-white text-lg font-bold mb-4">OAuth Sessions</h3>
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="size-2 rounded-full bg-[#0bda87]"></div>
-                      <span className="text-white text-sm">Twitter_Global_App</span>
+                  {(status?.sessions || []).map((session, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`size-2 rounded-full ${session.status === 'OK' ? 'bg-[#0bda87]' : 'bg-red-500'}`}></div>
+                        <span className="text-white text-sm">{session.name}</span>
+                      </div>
+                      {session.status === 'FAIL' ? (
+                        <button className="px-2 py-1 bg-primary text-white text-[10px] font-bold rounded hover:opacity-90 transition-opacity">RE-AUTH</button>
+                      ) : (
+                        <span className="text-[#ce8db1] text-xs">Exp in {session.exp}</span>
+                      )}
                     </div>
-                    <span className="text-[#ce8db1] text-xs">Exp in 4h</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="size-2 rounded-full bg-[#0bda87]"></div>
-                      <span className="text-white text-sm">Meta_Marketing_Suite</span>
-                    </div>
-                    <span className="text-[#ce8db1] text-xs">Exp in 22d</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="size-2 rounded-full bg-red-500"></div>
-                      <span className="text-white text-sm">LinkedIn_Enterprise</span>
-                    </div>
-                    <button className="px-2 py-1 bg-primary text-white text-[10px] font-bold rounded">RE-AUTH</button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="size-2 rounded-full bg-[#0bda87]"></div>
-                      <span className="text-white text-sm">Youtube_CMS_V3</span>
-                    </div>
-                    <span className="text-[#ce8db1] text-xs">Exp in 11h</span>
-                  </div>
+                  ))}
+                  {status?.sessions?.length === 0 && (
+                     <p className="text-xs text-[#ce8db1] italic">No active auth sessions.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -245,17 +236,17 @@ const PlatformHub = () => {
           <div className="flex flex-col gap-4 mt-4 rounded-xl border border-[#6b2e50] p-6 bg-[#311425]">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-white text-lg font-bold">Node Health Distribution</h3>
-              <span className="text-[#0bda87] text-xs font-bold">ALL SYSTEMS NOMINAL</span>
+              <span className="text-[#0bda87] text-xs font-bold">{status?.health?.overallStatus || 'SCANNING...'}</span>
             </div>
             <div className="flex h-3 w-full rounded-full bg-[#4b2038] overflow-hidden">
-              <div className="h-full bg-[#0bda87]" style={{ width: '85%' }}></div>
-              <div className="h-full bg-[#fa7938]" style={{ width: '10%' }}></div>
-              <div className="h-full bg-red-500" style={{ width: '5%' }}></div>
+              <div className="h-full bg-[#0bda87] transition-all duration-1000" style={{ width: `${status?.health?.healthy || 0}%` }}></div>
+              <div className="h-full bg-[#fa7938] transition-all duration-1000" style={{ width: `${status?.health?.recovery || 0}%` }}></div>
+              <div className="h-full bg-red-500 transition-all duration-1000" style={{ width: `${status?.health?.failed || 0}%` }}></div>
             </div>
             <div className="flex justify-between text-[#ce8db1] text-[10px] font-bold">
-              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-[#0bda87]"></span> HEALTHY (14)</div>
-              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-[#fa7938]"></span> RECOVERY (2)</div>
-              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500"></span> FAILED (1)</div>
+              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-[#0bda87]"></span> HEALTHY ({status?.health?.healthyCount || 0})</div>
+              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-[#fa7938]"></span> RECOVERY ({status?.health?.recoveryCount || 0})</div>
+              <div className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500"></span> FAILED ({status?.health?.failedCount || 0})</div>
             </div>
           </div>
         </div>
